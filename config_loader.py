@@ -1,5 +1,8 @@
 import os, sys, re
+from collections import defaultdict
 
+def _fail_and_exit():
+    sys.exit('[ERR] Config file is not valid. Exiting program...')
 
 def _is_valid(file_path):
     if not os.path.isfile(file_path):
@@ -19,58 +22,73 @@ def _is_multi_value(line):
         return True
     return False
 
-def _matchForGroups(line):
+def _is_a_group(line):
     groupMatch = re.match(r'\[(.+)\]', line)
-    if groupMatch:
-        return groupMatch.group(1)
-    return None
+    return groupMatch or None
 
-def _matchForOverrideSettings(line, overrides):
+def _is_override_setting(line):
     settingMatch = re.match(r'(.+)<(.+)>\s+\=\s+(.+)', line)
-    if settingMatch:
-        (setting, override, value) = (settingMatch.group(1), settingMatch.group(2), settingMatch.group(3))
-        if override not in overrides:
-            return None
-        return { 'key': setting, 'value': value }
-    return None
+    return settingMatch or None
 
-def _matchForStandardSettings(line):
+def _is_standard_setting(line):
     settingMatch = re.match(r'(.+)\s+\=\s+(.+)', line)
-    if settingMatch:
-        (setting, value) = (settingMatch.group(1), settingMatch.group(2))
-        if _is_multi_value(value):
-            value = value.split(',')
-        return { 'key': setting, 'value': value }
-    return None
+    return settingMatch or None
+
+def _set_group(config, group_obj):
+    group = group_obj.group(1)
+    config[group] = {}
+    return group
+
+def _set_override_setting(config, group, setting_obj, overrides):
+    (setting, override, value) = (setting_obj.group(1), setting_obj.group(2), setting_obj.group(3))
+    if override not in overrides:
+        return
+    _set_setting(config, group, setting, value)
+
+def _set_standard_setting(config, group, setting_obj):
+    (setting, value) = (setting_obj.group(1), setting_obj.group(2))
+    _set_setting(config, group, setting, value)
+
+def _set_setting(config, group, setting, value):
+    if _is_multi_value(value):
+        value = value.split(',')
+    config[group][setting] = value
 
 #todo Parser class?
 def load_config(file_path, overrides=[]):
     if not _is_valid(file_path):
-        sys.exit('[ERR] Config file is not valid. Exiting program...')
+        _fail_and_exit()
     with open(file_path) as file:
-        config = {}
-        current_group = ''
+        config = defaultdict(lambda: defaultdict(lambda: None))
+        current_group = None
         for line in file.read().splitlines():
             line = _clean(line)
             if not line:
                 continue
-            group = _matchForGroups(line)
-            if group:
-                current_group = group
+            matched = _is_a_group(line)
+            if matched:
+                current_group = _set_group(config, matched)
                 continue
-            override_setting = _matchForOverrideSettings(line, overrides)
-            if override_setting:
-                #config[current_group][override_setting['key']] = override_setting['value']
+            # At this point, if we don't have a "group" to assign "settings" to, we assume that the config is malformed.
+            if not current_group:
+                _fail_and_exit()
+            matched = _is_override_setting(line)
+            if matched:
+                _set_override_setting(config, current_group, matched, overrides)
                 continue
-            std_setting = _matchForStandardSettings(line)
-            if std_setting:
-                config[current_group] = std_setting
-                #config[current_group][std_setting['key']] = std_setting['value']
+            matched = _is_standard_setting(line)
+            if matched:
+                _set_standard_setting(config, current_group, matched)
                 continue
-            #todo
-            sys.exit('[ERR] Config file is not valid. Exiting program...')
-        print(config)
+            # At this point, if we can't recognize the line format, we assume that the config is malformed.
+            _fail_and_exit()
+        return config
 
 
 if __name__ == "__main__":
-  load_config('dummy.config')
+  config = load_config('dummy.config', ['production', 'staging', 'ubuntu'])
+  print(config)
+  print(config['common']['paid_users_size_limit'])
+  print(config['ftp']['name'])
+  print(config['http']['params'])
+  print(config['ftp']['lastname'])
