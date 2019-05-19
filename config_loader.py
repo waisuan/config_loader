@@ -7,7 +7,7 @@ Date created: 16/05/2019
 Python Version: 3.7
 """
 
-import os, sys, re
+import os, sys, re, argparse
 from config_dict import ConfigDict
 
 def _fail_and_exit():
@@ -90,11 +90,11 @@ def _is_standard_setting(line):
     settingMatch = re.match(r'(\S+)\s*\=\s*(.+)', line)
     return (settingMatch.group(1), settingMatch.group(2)) if settingMatch else None
 
-def _set_override_setting(config, group, setting_obj, overrides):
+def _set_override_setting(config, group, setting_obj, overrides=[]):
     if (not config) or (not group) or (not setting_obj):
         return False
     (setting, override, value) = setting_obj
-    if overrides and (override not in overrides):
+    if (not overrides) or (override not in overrides):
         return True
     return _set_setting(config, group, setting, value)
 
@@ -115,6 +115,7 @@ def load_config(file_path, overrides=[]):
         _fail_and_exit()
     with open(file_path) as file:
         config = ConfigDict()
+        # Helps keep track of the "group" that we want to set settings to.
         current_group = None
         for line in file.read().splitlines():
             line = _clean(line)
@@ -123,16 +124,16 @@ def load_config(file_path, overrides=[]):
             # Begin parse by looking for any "group" to init config obj with.
             # -- If not found, proceed with the last detected "group".
             current_group = _is_a_group(line) or current_group
-            if _set_group(config, current_group):
+            if current_group and _set_group(config, current_group):
                 continue
             elif not current_group:
                 # At this point, if we don't have a "group" to assign "settings" to, we assume that the config is malformed.
                 _fail_and_exit()
             override_setting = _is_override_setting(line)
-            if _set_override_setting(config, current_group, override_setting, overrides):
+            if override_setting and _set_override_setting(config, current_group, override_setting, overrides):
                 continue
             standard_setting = _is_standard_setting(line)
-            if _set_standard_setting(config, current_group, standard_setting):
+            if standard_setting and _set_standard_setting(config, current_group, standard_setting):
                 continue
             # At this point, if we can't recognize the line format, we assume that the config is malformed.
             _fail_and_exit()
@@ -140,20 +141,27 @@ def load_config(file_path, overrides=[]):
 
 
 if __name__ == "__main__":
-    config = load_config('dummy.config', ['production', 'staging', 'ubuntu'])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_file', required=True, help='Input config file path/name')
+    args = parser.parse_args()
+    config = load_config(args.config_file, ['itscript','production', 'staging', 'ubuntu'])
     print(config.common.basic_size_limit)
     print(config.common.student_size_limit)
     print(config.common.paid_users_size_limit)
     print(config.common['paid_users_size_limit'])
     print(config.common.path)
+    print(config.common)
     print(config.ftp.name)
     print(config.ftp['name'])
-    print(config.http.params)
-    print(config.ftp.lastname)
-    print(config.ftp.enabled)
     print(config.ftp.path)
     print(config.ftp['path'])
+    print(config.ftp.enabled)
+    print(config.ftp.lastname)
     print(config.ftp)
+    print(config.http.name)
+    print(config.http.path)
+    print(config.http.params)
+    print(config.http)
     print(config.this.does._not_.exist)
     print(config.this['does']['not']['exist'])
  

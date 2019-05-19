@@ -1,6 +1,8 @@
 """
-This is a custom-made dictionary.
-Purpose: To allow dictionaries be accessed through the dot notation and to better control dict query/access behaviour.
+This is a custom-made/purpose dictionary class; sub-classing from Python's dict class.
+Purpose:-
+(1) To allow dictionaries be accessed through the dot notation and to better control the dict's query/access behaviour.
+(2) To be extensible in cases where we'd want to add further/new enhancements to the class. Refer to README.md for more info on the subject.
 
 Author: Evan Sia Wai Suan
 Date created: 16/05/2019
