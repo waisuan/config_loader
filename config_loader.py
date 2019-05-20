@@ -32,15 +32,19 @@ def _is_multi_value(value):
     Check to see if a value needs to be translated to a <list> type.
     Criteria: Value is not enclosed with double-quotes and is comma-delimited.
     """
-    if value and (not value.startswith('"')) and (not value.endswith('"')) and ',' in value:
-        return True
-    return False
+    if (not value) or (not isinstance(value, str)):
+        return False
+    return (not value.startswith('"')) and (not value.endswith('"')) and ',' in value
 
 def _is_bool_true(value):
-    return value and value.lower() in ['yes', 'true', '1']
+    if (not value) or (not isinstance(value, str)):
+        return False
+    return value.lower() in ['yes', 'true', '1']
 
 def _is_bool_false(value):
-    return value and value.lower() in ['no', 'false', '0']
+    if (not value) or (not isinstance(value, str)):
+        return False
+    return value.lower() in ['no', 'false', '0']
 
 def _cast(value):
     """
@@ -68,7 +72,7 @@ def _is_a_group(line):
 
 def _set_group(config, group):
     if (config is not None) and group and (group not in config):
-        config[group] = ConfigDict()
+        config[group] = {}
         return True
     return False
 
@@ -151,17 +155,22 @@ if __name__ == "__main__":
     print(config.common['paid_users_size_limit'])
     print(config.common.path)
     print(config.common)
+    print(config['common'])
     print(config.ftp.name)
     print(config.ftp['name'])
     print(config.ftp.path)
     print(config.ftp['path'])
+    print(config['ftp'].path)
     print(config.ftp.enabled)
     print(config.ftp.lastname)
     print(config.ftp)
+    print(config['ftp'])
     print(config.http.name)
     print(config.http.path)
     print(config.http.params)
     print(config.http)
+    print(config['http'])
     print(config.this.does._not_.exist)
     print(config.this['does']['not']['exist'])
+    print(config.this['does']._not_['exist'])
  

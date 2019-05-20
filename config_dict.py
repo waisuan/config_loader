@@ -22,7 +22,7 @@ class ConfigDict(dict):
 
     def __getattr__(self, attr):
         # We return an empty dict here to avoid getting key errors when attempting to access a non-existant dict.
-        return self.get(attr, ConfigDict())
+        return self.__dict__.get(attr) or self.get(attr, ConfigDict())
 
     def __setattr__(self, key, value):
         self.__setitem__(key, value)
@@ -44,9 +44,9 @@ class ConfigDict(dict):
         super(ConfigDict, self).__delitem__(key)
         del self.__dict__[key]
 
-    def append(self, parent, key, val):
+    def append(self, parent, key, value):
         """
         Similar to the default behaviour of dict.update(...).
         We want to atomically allow nested dicts to be appended to our custom dict (as values).
         """
-        self.__dict__[parent].update({key: val})
+        self.__dict__[parent].update({key: value})
