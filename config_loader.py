@@ -111,7 +111,7 @@ def _set_standard_setting(config, group, setting_obj):
 def _set_setting(config, group, setting, value):
     if (not config) or (not group) or (not setting):
         return False
-    config.append(group, setting, _cast(value))
+    config[group].update({setting: _cast(value)})
     return True
 
 def load_config(file_path, overrides=[]):
@@ -149,6 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--config_file', required=True, help='Input config file path/name')
     args = parser.parse_args()
     config = load_config(args.config_file, ['itscript','production', 'staging', 'ubuntu'])
+    print(config)
     print(config.common.basic_size_limit)
     print(config.common.student_size_limit)
     print(config.common.paid_users_size_limit)
@@ -173,4 +174,3 @@ if __name__ == "__main__":
     print(config.this.does._not_.exist)
     print(config.this['does']['not']['exist'])
     print(config.this['does']._not_['exist'])
- 

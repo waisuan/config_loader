@@ -14,15 +14,15 @@ class ConfigDict(dict):
         super(ConfigDict, self).__init__(*args, **kwargs)
         for arg in args:
             if isinstance(arg, dict):
-                for k, v in arg.items():
-                    self[k] = v
+                for key, value in arg.items():
+                    self[key] = value
         if kwargs:
-            for k, v in kwargs.items():
-                self[k] = v
+            for key, value in kwargs.items():
+                self[key] = value
 
     def __getattr__(self, attr):
         # We return an empty dict here to avoid getting key errors when attempting to access a non-existant dict.
-        return self.__dict__.get(attr) or self.get(attr, ConfigDict())
+        return self.get(attr, ConfigDict())
 
     def __setattr__(self, key, value):
         self.__setitem__(key, value)
@@ -31,22 +31,17 @@ class ConfigDict(dict):
         return self.__getattr__(item)
 
     def __setitem__(self, key, value):
+        if isinstance(value, dict):
+            value = ConfigDict(value)
         super(ConfigDict, self).__setitem__(key, value)
-        if isinstance( value, dict ):
-            self.__dict__.update({key: ConfigDict(value)})
-        else:
-            self.__dict__.update({key: value})
 
-    def __delattr__(self, item):
-        self.__delitem__(item)
-
-    def __delitem__(self, key):
-        super(ConfigDict, self).__delitem__(key)
-        del self.__dict__[key]
-
-    def append(self, parent, key, value):
-        """
-        Similar to the default behaviour of dict.update(...).
-        We want to atomically allow nested dicts to be appended to our custom dict (as values).
-        """
-        self.__dict__[parent].update({key: value})
+    def update(self, *args, **kwargs):
+        if args:
+            if len(args) > 1:
+                raise TypeError("update expected at most 1 arguments, "
+                                "got %d" % len(args))
+            other = dict(args[0])
+            for key in other:
+                self[key] = other[key]
+        for key in kwargs:
+            self[key] = kwargs[key]

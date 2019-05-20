@@ -11,6 +11,7 @@ How to execute code?
     >>> from config_loader import load_config
     >>> config = load_config(<CONFIG FILE PATH/NAME>, [<OVERRIDE_1, OVERRIDE_2, ...>])
     >>> config.<KEY>
+(3) python test_config_loader.py - For unit testing purposes.
 
 Notes:-
 - Due to the varying size of the input config file, I opted to not load the file all at once into memory and resorted to reading/parsing it one line at a time. This gave me the control to skip over any unnecessary lines (e.g. comments) and only keep what was necessary.
